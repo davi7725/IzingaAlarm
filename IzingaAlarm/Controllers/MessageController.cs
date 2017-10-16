@@ -18,40 +18,47 @@ namespace IzingaAlarm.Controllers
             string queryPersonsToAlert = "Select * from PersonToManage WHERE AlarmType=@alarmTypeId and AlarmNumber = @phoneNumber";
             string returnString = "";
 
-            try
+            if (CheckPhoneNumber(phoneNr) == true)
             {
-                SqlConnection conn = openNewConnection();
-                SqlCommand cmd = new SqlCommand(queryAlarmTypeId, conn);
-                cmd.Parameters.Add(new SqlParameter("@alarmType", message));
-                SqlDataReader rdr = cmd.ExecuteReader();
-                if (rdr.HasRows)
+                try
                 {
-                    rdr.Read();
-                    int alarmTypeId = rdr.GetInt32(0);
-                    rdr.Close();
-
-                    cmd = new SqlCommand(queryPersonsToAlert, conn);
-                    cmd.Parameters.Add(new SqlParameter("@alarmTypeId", alarmTypeId));
-                    cmd.Parameters.Add(new SqlParameter("@phoneNumber", phoneNr));
-
-                    rdr = cmd.ExecuteReader();
-                    if(rdr.HasRows)
+                    SqlConnection conn = openNewConnection();
+                    SqlCommand cmd = new SqlCommand(queryAlarmTypeId, conn);
+                    cmd.Parameters.Add(new SqlParameter("@alarmType", message));
+                    SqlDataReader rdr = cmd.ExecuteReader();
+                    if (rdr.HasRows)
                     {
-                        while(rdr.Read())
+                        rdr.Read();
+                        int alarmTypeId = rdr.GetInt32(0);
+                        rdr.Close();
+
+                        cmd = new SqlCommand(queryPersonsToAlert, conn);
+                        cmd.Parameters.Add(new SqlParameter("@alarmTypeId", alarmTypeId));
+                        cmd.Parameters.Add(new SqlParameter("@phoneNumber", phoneNr));
+
+                        rdr = cmd.ExecuteReader();
+                        if (rdr.HasRows)
                         {
-                            returnString += "PERSON: " + rdr.GetString(1) + " For alarm: " + rdr.GetString(2) + " with the type " + rdr.GetInt32(0).ToString() + "\n";
+                            while (rdr.Read())
+                            {
+                                returnString += "PERSON: " + rdr.GetString(1) + " For alarm: " + rdr.GetString(2) + " with the type " + rdr.GetInt32(0).ToString() + "\n";
+                            }
                         }
                     }
-                }
-                else
-                {
-                    returnString = "No such an alarm type, check input.";
-                }
+                    else
+                    {
+                        returnString = "No such an alarm type, check input.";
+                    }
 
+                }
+                catch (SqlException sqlE)
+                {
+                    returnString = sqlE.Message;
+                }
             }
-            catch (SqlException sqlE)
+            else
             {
-                returnString = sqlE.Message;
+                returnString = "Incorrect phone number format.";
             }
 
             return returnString;
@@ -66,50 +73,58 @@ namespace IzingaAlarm.Controllers
             string querySubscribe = "Insert into PersonToManage Values (@alarmTypeId,@personPhone,@alarmNr)";
             string returnString = "";
 
-            try
+            if (CheckPhoneNumber(phoneNr) == true && CheckPhoneNumber(alarmPhoneNumber) == true)
             {
-                SqlConnection conn = openNewConnection();
-                SqlCommand cmd = new SqlCommand(queryCreatePerson,conn);
-                cmd.Parameters.Add(new SqlParameter("@name", name));
-                cmd.Parameters.Add(new SqlParameter("@phoneNumber", phoneNr));
                 try
                 {
-                    cmd.ExecuteNonQuery();
-                }
-                catch(SqlException e)
-                { }
-
-                cmd = new SqlCommand(queryAlarmTypeId,conn);
-                cmd.Parameters.Add(new SqlParameter("@alarmType", alarmType));
-                SqlDataReader rdr = cmd.ExecuteReader();
-                if(rdr.HasRows)
-                {
-                    rdr.Read();
-                    int alarmTypeId = rdr.GetInt32(0);
-                    rdr.Close();
-
-                    cmd = new SqlCommand(querySubscribe, conn);
-                    cmd.Parameters.Add(new SqlParameter("@alarmNr", alarmPhoneNumber));
-                    cmd.Parameters.Add(new SqlParameter("@alarmTypeId", alarmTypeId));
-                    cmd.Parameters.Add(new SqlParameter("@personPhone", phoneNr));
-
-                    if(cmd.ExecuteNonQuery() > 0)
+                    SqlConnection conn = openNewConnection();
+                    SqlCommand cmd = new SqlCommand(queryCreatePerson, conn);
+                    cmd.Parameters.Add(new SqlParameter("@name", name));
+                    cmd.Parameters.Add(new SqlParameter("@phoneNumber", phoneNr));
+                    try
                     {
-                        returnString = "Successfuly added a subscription";
+                        cmd.ExecuteNonQuery();
+                    }
+                    catch (SqlException e)
+                    { }
+
+                    cmd = new SqlCommand(queryAlarmTypeId, conn);
+                    cmd.Parameters.Add(new SqlParameter("@alarmType", alarmType));
+                    SqlDataReader rdr = cmd.ExecuteReader();
+                    if (rdr.HasRows)
+                    {
+                        rdr.Read();
+                        int alarmTypeId = rdr.GetInt32(0);
+                        rdr.Close();
+
+                        cmd = new SqlCommand(querySubscribe, conn);
+                        cmd.Parameters.Add(new SqlParameter("@alarmNr", alarmPhoneNumber));
+                        cmd.Parameters.Add(new SqlParameter("@alarmTypeId", alarmTypeId));
+                        cmd.Parameters.Add(new SqlParameter("@personPhone", phoneNr));
+
+                        if (cmd.ExecuteNonQuery() > 0)
+                        {
+                            returnString = "Successfuly added a subscription";
+                        }
+                        else
+                        {
+                            returnString = "An error occurred, check input.";
+                        }
                     }
                     else
                     {
                         returnString = "An error occurred, check input.";
                     }
+
                 }
-                else
+                catch (SqlException sqlE)
                 {
-                    returnString = "An error occurred, check input.";
+                    returnString = "User already subscribes this alarm";
                 }
-                
-            }catch(SqlException sqlE)
+            }
+            else
             {
-                returnString = "User already subscribes this alarm";
+                returnString = "Incorrect phone number format.";
             }
 
             return returnString;
@@ -123,41 +138,48 @@ namespace IzingaAlarm.Controllers
             string queryUnsubscribe = "Delete from PersonToManage WHERE personNumber=@phoneNr and alarmNumber=@alarmPhoneNumber and alarmType=@alarmType";
             string returnString = "";
 
-            try
+            if (CheckPhoneNumber(phoneNr) == true && CheckPhoneNumber(alarmPhoneNumber) == true)
             {
-                SqlConnection conn = openNewConnection();
-                SqlCommand cmd = new SqlCommand(queryAlarmTypeId, conn);
-                cmd.Parameters.Add(new SqlParameter("@alarmType", alarmType));
-                SqlDataReader rdr = cmd.ExecuteReader();
-                if (rdr.HasRows)
+                try
                 {
-                    rdr.Read();
-                    int alarmTypeId = rdr.GetInt32(0);
-                    rdr.Close();
-
-                    cmd = new SqlCommand(queryUnsubscribe, conn);
-                    cmd.Parameters.Add(new SqlParameter("@alarmPhoneNumber", alarmPhoneNumber));
-                    cmd.Parameters.Add(new SqlParameter("@alarmType", alarmTypeId));
-                    cmd.Parameters.Add(new SqlParameter("@phoneNr", phoneNr));
-
-                    if (cmd.ExecuteNonQuery() > 0)
+                    SqlConnection conn = openNewConnection();
+                    SqlCommand cmd = new SqlCommand(queryAlarmTypeId, conn);
+                    cmd.Parameters.Add(new SqlParameter("@alarmType", alarmType));
+                    SqlDataReader rdr = cmd.ExecuteReader();
+                    if (rdr.HasRows)
                     {
-                        returnString = "Successfuly removed from a subscription";
+                        rdr.Read();
+                        int alarmTypeId = rdr.GetInt32(0);
+                        rdr.Close();
+
+                        cmd = new SqlCommand(queryUnsubscribe, conn);
+                        cmd.Parameters.Add(new SqlParameter("@alarmPhoneNumber", alarmPhoneNumber));
+                        cmd.Parameters.Add(new SqlParameter("@alarmType", alarmTypeId));
+                        cmd.Parameters.Add(new SqlParameter("@phoneNr", phoneNr));
+
+                        if (cmd.ExecuteNonQuery() > 0)
+                        {
+                            returnString = "Successfuly removed from a subscription";
+                        }
+                        else
+                        {
+                            returnString = "There is no subscription for this alarm type and user";
+                        }
                     }
                     else
                     {
-                        returnString = "There is no subscription for this alarm type and user";
+                        returnString = "No such an alarm type, check input.";
                     }
-                }
-                else
-                {
-                    returnString = "No such an alarm type, check input.";
-                }
 
+                }
+                catch (SqlException sqlE)
+                {
+                    returnString = "An error ocurred, check input!";
+                }
             }
-            catch (SqlException sqlE)
+            else
             {
-                returnString = "An error ocurred, check input!";
+                returnString = "Incorrect phone number format.";
             }
 
             return returnString;
@@ -170,10 +192,12 @@ namespace IzingaAlarm.Controllers
             string queryRegisterAlarm = "Insert into Alarm values(@phoneNr)";
             string returnString = "";
 
-            try
+            if (CheckPhoneNumber(phoneNr) == true)
             {
-                SqlConnection conn = openNewConnection();
-                SqlCommand cmd = new SqlCommand(queryRegisterAlarm, conn);
+                try
+                {
+                    SqlConnection conn = openNewConnection();
+                    SqlCommand cmd = new SqlCommand(queryRegisterAlarm, conn);
                     cmd.Parameters.Add(new SqlParameter("@phoneNr", phoneNr));
 
                     if (cmd.ExecuteNonQuery() > 0)
@@ -184,10 +208,15 @@ namespace IzingaAlarm.Controllers
                     {
                         returnString = "Can't seem to add an alarm right now, please try later";
                     }
+                }
+                catch (SqlException sqlE)
+                {
+                    returnString = "An alarm with this number is already registered.";
+                }
             }
-            catch (SqlException sqlE)
+            else
             {
-                returnString = "An alarm with this number is already registered.";
+                returnString = "Incorrect phone number format.";
             }
 
             return returnString;
@@ -199,6 +228,29 @@ namespace IzingaAlarm.Controllers
             SqlConnection conn = new SqlConnection(connection);
             conn.Open();
             return conn;
+        }
+
+        private bool CheckPhoneNumber(string phoneNr)
+        {
+            List<char> numbers = new List<char> { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+            bool isNumbers = true;
+
+            if (phoneNr.Length == 8)
+            {
+                foreach (char c in phoneNr)
+                {
+                    if (numbers.Contains(c) == false)
+                    {
+                        isNumbers = false;
+                    }
+                }
+            }
+            else
+            {
+                isNumbers = false;
+            }
+
+            return isNumbers;
         }
     }
 }
