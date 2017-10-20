@@ -15,7 +15,7 @@ namespace IzingaAlarm.Controllers
         public string AlarmTriggers(string phoneNr, string message)
         {
             string queryAlarmTypeId = "Select AlarmTypeId from AlarmType Where Type = @alarmType";
-            string queryPersonsToAlert = "Select * from PersonToManage WHERE AlarmType=@alarmTypeId and AlarmNumber = @phoneNumber";
+            string queryPersonsToAlert = "Select * from PersonToManage WHERE alarmTypeId=@alarmTypeId and alarmNumber = @phoneNumber";
             string returnString = "";
 
             if (CheckPhoneNumber(phoneNr) == true)
@@ -119,7 +119,7 @@ namespace IzingaAlarm.Controllers
                 }
                 catch (SqlException sqlE)
                 {
-                    returnString = "User already subscribes this alarm";
+                    returnString = "An error occured, check input!";
                 }
             }
             else
@@ -135,7 +135,7 @@ namespace IzingaAlarm.Controllers
         public string UnsubscribeAlarm(string phoneNr, string alarmPhoneNumber, string alarmType)
         {
             string queryAlarmTypeId = "Select AlarmTypeId from AlarmType Where Type = @alarmType";
-            string queryUnsubscribe = "Delete from PersonToManage WHERE personNumber=@phoneNr and alarmNumber=@alarmPhoneNumber and alarmType=@alarmType";
+            string queryUnsubscribe = "Delete from PersonToManage WHERE personNumber=@phoneNr and alarmNumber=@alarmPhoneNumber and alarmTypeId=@alarmType";
             string returnString = "";
 
             if (CheckPhoneNumber(phoneNr) == true && CheckPhoneNumber(alarmPhoneNumber) == true)
